@@ -80,7 +80,7 @@ pipeline {
             steps {
                 sh "mtaBuild --mtar dataART.${projectName}.${version}.mtar --build-target XSA build"
                 stash includes: "dataART.${projectName}.${version}.mtar", name: "mtarfile", useDefaultExcludes: false                
-                stash includes: "Infrastructure/**/**/*", name: "DeploymentFiles", useDefaultExcludes: false             
+                 stash includes: "Infrastructure/*.ps1", name: "PSscripts", useDefaultExcludes: false      
                               
 
                
@@ -96,7 +96,7 @@ pipeline {
 		    }
                 steps {
                 unstash "mtarfile"                
-                unstash "DeploymentFiles"
+                unstash "PSscripts"
                   
                 sh "rm -rf dataART.${projectName}.${version}"
                 
@@ -107,8 +107,8 @@ pipeline {
                                 targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/"),
                         fileCopyOperation(
                                 flattenFiles: true,
-                                includes: "*.ps1",
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/Scripts/")])
+                                includes: "Infrastructure/*.ps1",
+                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/")])
 
                 sh """ octo pack --id="dataART.${projectName}" --version="${packageVersion}" --basepath="$WORKSPACE/dataART.${projectName}.${version}" --outFolder=$WORKSPACE """
                 
