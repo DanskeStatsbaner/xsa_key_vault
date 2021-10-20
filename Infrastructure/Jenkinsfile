@@ -32,35 +32,7 @@ pipeline {
 
     stages {
     
-        stage ("Octopus Project Sync") {
-            agent { label "windows" }
-            steps {
-                bat 'del *.nupkg'
-                bat 'del *.zip'
-              
-                rtDownload(
-                    spec: '''{ "files": [
-                        {
-                            "pattern": "octopus-dataarten/dataART.xsa_octopus.*",
-                            "sortBy": ["created"],
-                            "sortOrder": "desc",
-                            "limit": 1
-                        }
-                    ] }''',
-                    serverId: "${artifactoryServerId}"
-                )
-              
-                bat 'ren *.nupkg xsa_octopus.zip'
-                unzip zipFile: "xsa_octopus.zip"
-
-                bat 'xcopy SpaceCloner-master\\* .\\* /s /e /i /y'
-
-                powershell """
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-                    ./SetupOctopusProject.ps1 -fromProjectName $parentProject -toProjectName $octoName -octopusUrl $octoUrl -octopusApiKey $apiKey
-                    """
-            }
-        }  
+      
       stage ("Check Code") {
             steps {
 
