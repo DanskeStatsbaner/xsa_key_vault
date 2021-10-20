@@ -12,6 +12,7 @@ pipeline {
         disableConcurrentBuilds()
     }
     environment {
+    	daProject = "${env.GIT_URL.replaceFirst(/^.*\/([^\/]+?).git$/, '$1')}"
         projectName  = "${daProject.toLowerCase()}"
         deployTo = "sit"
         version = "1.0.0.${env.BUILD_NUMBER}"
