@@ -78,11 +78,7 @@ pipeline {
                     }
                  }
             steps {
-                script {
-                def file = new File('Deployment')
-                file.mkdir()  
-                }
-                sh "mtaBuild --mtar dataART.${projectName}.${version}.mtar --build-target XSA build"                
+                sh "mtaBuild --mtar dataART.${projectName}.${version}.mtar --build-target XSA build"
                 stash includes: "dataART.${projectName}.${version}.mtar", name: "mtarfile", useDefaultExcludes: false                
                 stash includes: "Deployment/**/**/*", name: "DeploymentFiles", useDefaultExcludes: false                
                 
@@ -106,7 +102,7 @@ pipeline {
                 
                 unzip zipFile: "$WORKSPACE/dataART.xsa_ps1_deploy.zip", dir: "$WORKSPACE/"
 
-                stash includes: "*.ps1", name: "PSscripts", useDefaultExcludes: false
+               
             }
         }
         
@@ -118,49 +114,12 @@ pipeline {
                 }
 		    }
                 steps {
-                unstash "mtarfile"
-                unstash "PSscripts"
+                unstash "mtarfile"                
                 unstash "DeploymentFiles"
                   
                 sh "rm -rf dataART.${projectName}.${version}"
                 
-                fileOperations([ 
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/PostDeploy/dev/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/PostDeploy/dev/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/PostDeploy/tst/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/PostDeploy/tst/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/PostDeploy/prd/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/PostDeploy/prd/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/PreDeploy/dev/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/PreDeploy/dev/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/PreDeploy/tst/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/PreDeploy/tst/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/PreDeploy/prd/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/PreDeploy/prd/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/Test/dev/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/Test/dev/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/Test/tst/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/Test/tst/"),
-                        fileCopyOperation(
-                                flattenFiles: true, 
-                                includes: "Deployment/Test/prd/*.*", 
-                                targetLocation: "$WORKSPACE/dataART.${projectName}.${version}/Deployment/Test/prd/"),
+                fileOperations([                        
                         fileCopyOperation(
                                 flattenFiles: true, 
                                 includes: "dataART.${projectName}.${version}.mtar", 
