@@ -6,7 +6,7 @@ context Key_Vault {
 
 /*@@layout{"layoutInfo":{"x":-1011,"y":-24.5}}*/
     entity Keys {
-        key APPNAME		   : LocalDate;
+        key APPNAME		   : String(254);
         	JSON    	   : LargeString;
     };
 
