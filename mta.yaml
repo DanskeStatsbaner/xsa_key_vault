@@ -3,17 +3,20 @@ _schema-version: '2.1'
 version: 0.0.1
 
 modules:
- - name: db
+ - name: XSA_KEY_VAULT-db
    type: hdb
    path: db
    requires:
-    - name: hdi_db
+    - name: XSA_KEY_VAULT-CONTAINER
+      properties:
+        TARGET_CONTAINER: ~{hdi-container-name}
 
 resources:
- - name: hdi_db
+ - name: XSA_KEY_VAULT-CONTAINER
    parameters:
       config:
          schema: XSA_KEY_VAULT
    properties:
       hdi-container-name: ${service-name}
    type: com.sap.xs.hdi-container
+
