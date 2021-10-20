@@ -80,27 +80,8 @@ pipeline {
             steps {
                 sh "mtaBuild --mtar dataART.${projectName}.${version}.mtar --build-target XSA build"
                 stash includes: "dataART.${projectName}.${version}.mtar", name: "mtarfile", useDefaultExcludes: false                
-                stash includes: "Deployment/**/**/*", name: "DeploymentFiles", useDefaultExcludes: false                
-                
-                fileOperations([
-                          fileDeleteOperation(
-                              includes: 'dataART.xsa_ps1_deploy.*')])
-  
-                rtDownload(
-                    spec: '''{ "files": [
-                        {
-                            "pattern": "octopus-dataarten/dataART.xsa_ps1_deploy.*",
-                            "sortBy": ["created"],
-                            "sortOrder": "desc",
-                            "limit": 1
-                        }
-                    ] }''',
-                    serverId: "${artifactoryServerId}"
-                )
-                
-                sh "cp dataART.xsa_ps1_deploy.*.nupkg dataART.xsa_ps1_deploy.zip"
-                
-                unzip zipFile: "$WORKSPACE/dataART.xsa_ps1_deploy.zip", dir: "$WORKSPACE/"
+                stash includes: "Infrastructure/**/**/*", name: "DeploymentFiles", useDefaultExcludes: false             
+                              
 
                
             }
