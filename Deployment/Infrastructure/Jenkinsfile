@@ -1,2 +1,2 @@
 @Library('jenkinssharedlibrary') _
-daPipeline 'XSA_KEY_VAULT' 
+daPipeline 'xsa_key_vault' 
