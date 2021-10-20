@@ -1,0 +1,15 @@
+namespace XSA_KEY_VAULT.db.Tables;
+
+/*@@layout{"layoutInfo":{"x":126.849609375,"y":7}}*/
+context Key_Vault {
+    /*@@layout{"layoutInfo":{"x":-436,"y":-23.5}}*/
+
+/*@@layout{"layoutInfo":{"x":-1011,"y":-24.5}}*/
+    entity Keys {
+        key APPNAME		   : LocalDate;
+        	JSON    	   : LargeString;
+    };
+
+
+ 
+};
