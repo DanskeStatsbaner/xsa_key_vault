@@ -62,6 +62,55 @@ pipeline {
                       sh "exit ${status}"                      
                    } 
                    echo "*** sap/hdi-deploy version 3.11.9 fundet ***"
+              
+                   echo "*** find Deployment directory ***"
+                   script {
+                      def status = sh returnStatus: true, script:"cd Deployment"
+                      println("findDirectory $status")
+                      sh "exit ${status}"                      
+                   } 
+                   echo "*** Deployment directory fundet ***"
+              
+                   echo "*** find role ***"
+                   script {
+                     //if første 2 tegn $findShipRole= 'P_'                    
+                     
+                     def status = sh returnStatus: true, script:"grep -ir --include '*.hdbrole' 'SHIP.' . "
+                      
+                     if (status==0)
+                     {
+                          println("En ship rolle er fundet")                
+                          def status1 = sh returnStatus: true, script:"grep -ir --include '*.hdbrole' $findShipRole . "                     
+                          if (status1==0)
+                          {
+                             println("En ship rolle som passer med projektet er fundet")                            
+                             def status2 = sh returnStatus: true, script:"grep -ir --include '*.hdbrole' 'SHIP.P_' . "                             
+                             if (status2==0)
+                             {
+                                 println("Projektet er en P-container")
+                                 sh "exit 0"
+                             }
+                             else
+                             {
+                                 println("Kun P container må have indeholde SHIP rolle")
+                                 sh "exit 1"
+                             }
+                          }
+                          else
+                          {
+                             println("Ingen ship rolle som passer med projektet fundet")
+                             sh "exit 1"
+                          }
+                      }
+                      else
+                      {
+                          sh "exit 0"
+                      }
+                   } 
+                   echo "*** SHIP role OK ***"
+
+                   
+                   echo "****************************   slut test container   ***************************"               
             }            
         }
         stage ("Build mtar") {
@@ -74,11 +123,11 @@ pipeline {
                     }
                  }
             steps {
-                sh "mtaBuild --mtar dataART.${projectName}.${version}.mtar --build-target XSA build"
-                 script {
+                script {
                 def file = new File('Deployment')
                 file.mkdir()  
                 }
+                sh "mtaBuild --mtar dataART.${projectName}.${version}.mtar --build-target XSA build"                
                 stash includes: "dataART.${projectName}.${version}.mtar", name: "mtarfile", useDefaultExcludes: false                
                 stash includes: "Deployment/**/**/*", name: "DeploymentFiles", useDefaultExcludes: false                
                 
