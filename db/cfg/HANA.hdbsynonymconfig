@@ -1,0 +1,14 @@
+{
+	"XSA_KEY_VAULT.db.Synonyms::DUMMY": {
+		"target": {
+			"schema": "SYS",
+			"object": "DUMMY"
+		}
+	},
+	"XSA_KEY_VAULT.db.Synonyms::M_DATABASE": {
+		"target": {
+			"schema": "SYS",
+			"object": "M_DATABASE"
+		}
+	}
+}

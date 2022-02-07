@@ -1,0 +1,50 @@
+PROCEDURE "XSA_KEY_VAULT.db.Procedures::humio"(
+	IN APP_NAME NVARCHAR(100),
+	IN MESSAGE NVARCHAR(5000),
+	IN LOG_LEVEL NVARCHAR(50) DEFAULT 'DEBUG',
+	IN HOST NVARCHAR(100) DEFAULT 'HANA',
+	IN SRC NVARCHAR(100) DEFAULT 'humio.hdbprocedure',
+	IN ATTRIBUTES NVARCHAR(5000) DEFAULT '',
+	IN JWT NVARCHAR(5000) DEFAULT NULL,
+	OUT OUTPUT table (
+		RESPONSE NVARCHAR(5000)
+	)
+)
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER AS
+BEGIN
+	DECLARE CT TIMESTAMP = CURRENT_TIMESTAMP;
+	DECLARE DATETIME_NOW NVARCHAR(100) = TO_VARCHAR(CT, 'YYYY-MM-DD') || 'T' || TO_VARCHAR(CT, 'HH24:MI:SS.FF3') || '+01:00';
+	
+	DECLARE CURRENTOBJECTSCHEMA VARCHAR(100);
+	DECLARE CURRENTSCHEMA VARCHAR(100);
+	DECLARE CURRENTUSER VARCHAR(100);
+	DECLARE SESSIONUSER VARCHAR(100);
+	DECLARE ENVIRONMENT VARCHAR(100);
+	
+	SELECT
+		CURRENT_OBJECT_SCHEMA(),
+		CURRENT_SCHEMA,
+		CURRENT_USER,
+		SESSION_USER,
+		(SELECT SYSTEM_ID FROM "XSA_KEY_VAULT.db.Synonyms::M_DATABASE")
+	INTO
+		CURRENTOBJECTSCHEMA,
+		CURRENTSCHEMA,
+		CURRENTUSER,
+		SESSIONUSER,
+		ENVIRONMENT
+	FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+	
+	IF JWT IS NULL THEN
+		CALL "XSA_KEY_VAULT.db.Procedures::token"(APP => REPLACE(UPPER(APP_NAME), '-', '_'), JWT => JWT);
+	END IF;
+	
+	IF ATTRIBUTES = '' THEN
+		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "environment": "' || ENVIRONMENT || '"}';
+	ELSE
+		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "environment": "' || ENVIRONMENT || '", ' || ATTRIBUTES || '}';
+	END IF;
+	
+	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabinu0.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || MESSAGE || '"}]}]}''', OUTPUT => OUTPUT);
+END

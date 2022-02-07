@@ -1,0 +1,16 @@
+PROCEDURE "XSA_KEY_VAULT.db.Procedures::bash"(
+		IN COMMAND VARCHAR(5000),
+		OUT OUTPUT table (
+			RESPONSE NVARCHAR(5000)
+		)
+	)
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER AS
+BEGIN
+
+	ins = SELECT COMMAND FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+	CALL "XSA_KEY_VAULT.db.Procedures::bash_r"(INS => :ins, OUTS => response);
+	
+	OUTPUT = SELECT RESPONSE FROM :response;
+
+END
