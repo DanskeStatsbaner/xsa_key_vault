@@ -20,6 +20,7 @@ BEGIN
 	DECLARE CURRENTSCHEMA VARCHAR(100);
 	DECLARE CURRENTUSER VARCHAR(100);
 	DECLARE SESSIONUSER VARCHAR(100);
+	DECLARE XSAPPLICATIONUSER VARCHAR(100);
 	DECLARE ENVIRONMENT VARCHAR(100);
 	
 	SELECT
@@ -27,12 +28,14 @@ BEGIN
 		CURRENT_SCHEMA,
 		CURRENT_USER,
 		SESSION_USER,
+		SESSION_CONTEXT('XS_APPLICATIONUSER'),
 		(SELECT SYSTEM_ID FROM "XSA_KEY_VAULT.db.Synonyms::M_DATABASE")
 	INTO
 		CURRENTOBJECTSCHEMA,
 		CURRENTSCHEMA,
 		CURRENTUSER,
 		SESSIONUSER,
+		XSAPPLICATIONUSER,
 		ENVIRONMENT
 	FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
 	
@@ -41,9 +44,9 @@ BEGIN
 	END IF;
 	
 	IF ATTRIBUTES = '' THEN
-		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "environment": "' || ENVIRONMENT || '"}';
+		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "application_user": "' || XSAPPLICATIONUSER || '", "environment": "' || ENVIRONMENT || '"}';
 	ELSE
-		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "environment": "' || ENVIRONMENT || '", ' || ATTRIBUTES || '}';
+		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "application_user": "' || XSAPPLICATIONUSER || '", "environment": "' || ENVIRONMENT || '", ' || ATTRIBUTES || '}';
 	END IF;
 	
 	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabinu0.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || MESSAGE || '"}]}]}''', OUTPUT => OUTPUT);
