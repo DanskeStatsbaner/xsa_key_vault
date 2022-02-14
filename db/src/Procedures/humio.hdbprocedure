@@ -5,10 +5,7 @@ PROCEDURE "XSA_KEY_VAULT.db.Procedures::humio"(
 	IN HOST NVARCHAR(100) DEFAULT 'HANA',
 	IN SRC NVARCHAR(100) DEFAULT 'humio.hdbprocedure',
 	IN ATTRIBUTES NVARCHAR(5000) DEFAULT '',
-	IN JWT NVARCHAR(5000) DEFAULT NULL,
-	OUT OUTPUT table (
-		RESPONSE NVARCHAR(5000)
-	)
+	IN JWT NVARCHAR(5000) DEFAULT NULL
 )
    LANGUAGE SQLSCRIPT
    SQL SECURITY INVOKER AS
@@ -22,6 +19,9 @@ BEGIN
 	DECLARE SESSIONUSER VARCHAR(100);
 	DECLARE XSAPPLICATIONUSER VARCHAR(100);
 	DECLARE ENVIRONMENT VARCHAR(100);
+	
+	DECLARE JSON_RESPONSE NVARCHAR(5000);
+	DECLARE STATE VARCHAR(100);
 	
 	SELECT
 		CURRENT_OBJECT_SCHEMA(),
@@ -49,5 +49,14 @@ BEGIN
 		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "application_user": "' || XSAPPLICATIONUSER || '", "environment": "' || ENVIRONMENT || '", ' || ATTRIBUTES || '}';
 	END IF;
 	
-	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabinu0.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || MESSAGE || '"}]}]}''', OUTPUT => OUTPUT);
+	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabinu0.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || MESSAGE || '"}]}]}''', OUTPUT => response);
+	
+	SELECT RESPONSE INTO JSON_RESPONSE FROM :response;
+	
+	RESPONSE_TABLE = SELECT JSON_VALUE(JSON_RESPONSE, '$.state') AS STATE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+	
+	SELECT STATE INTO STATE FROM :RESPONSE_TABLE;
+	
+	CALL "XSA_KEY_VAULT.db.Procedures::error"(STATE);
+	
 END
