@@ -1,0 +1,51 @@
+PROCEDURE "XSA_KEY_VAULT.db.Procedures::run"(
+		IN APP_NAME NVARCHAR(100),
+		OUT OUTPUT table (
+			RESPONSE NVARCHAR(5000)
+		)
+	)
+   LANGUAGE SQLSCRIPT
+   SQL SECURITY INVOKER AS
+BEGIN
+    
+    DECLARE action_response_state VARCHAR(100);
+    DECLARE UUID VARCHAR(100);
+    
+    -- Obtain JWT from XSUAA
+    DECLARE JWT VARCHAR(5000);
+    CALL "XSA_KEY_VAULT.db.Procedures::token"(APP => APP_NAME, JWT => JWT);
+    
+    OUTPUT = SELECT 'Task finished' AS RESPONSE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+	
+	SELECT SYSUUID INTO UUID FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+	
+	CALL "XSA_KEY_VAULT.db.Procedures::humio"(APP_NAME, MESSAGE => APP_NAME || ' starting...', JWT => JWT);
+	
+	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'start', UUID, JWT, ACTION_RESPONSE);
+    SELECT STATE INTO action_response_state FROM :ACTION_RESPONSE;
+    
+    IF action_response_state = 'OK' THEN
+    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(APP_NAME, MESSAGE => APP_NAME || ' started...', JWT => JWT);
+    
+    	WHILE action_response_state != 'failed' AND action_response_state != 'completed' DO
+	    	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'status', UUID, JWT, ACTION_RESPONSE);
+	    	SELECT STATE INTO action_response_state FROM :ACTION_RESPONSE;
+	    	CALL SQLSCRIPT_SYNC:SLEEP_SECONDS(1);
+    	END WHILE;
+    	
+    	IF action_response_state = 'failed' THEN
+    		CALL "XSA_KEY_VAULT.db.Procedures::humio"(APP_NAME, MESSAGE => APP_NAME || ' failed...', LOG_LEVEL => 'ERROR', JWT => JWT);
+    		CALL "XSA_KEY_VAULT.db.Procedures::error"('Task failed, check Python logs');
+    	END IF;
+    
+    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(APP_NAME, MESSAGE => APP_NAME || ' finished...', JWT => JWT);
+    
+    	OUTPUT = SELECT 'Task finished' AS RESPONSE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+    ELSE
+    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(APP_NAME, MESSAGE => APP_NAME || ' failed...', LOG_LEVEL => 'ERROR', JWT => JWT);
+	    CALL "XSA_KEY_VAULT.db.Procedures::error"('Task exited within one second, check Python logs');
+    END IF;
+
+END
+
+ 
