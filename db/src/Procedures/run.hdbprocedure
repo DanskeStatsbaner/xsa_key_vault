@@ -13,19 +13,19 @@ BEGIN
     
     -- Obtain JWT from XSUAA
     DECLARE JWT VARCHAR(5000);
+    DECLARE HUMIO_JWT VARCHAR(5000);
     CALL "XSA_KEY_VAULT.db.Procedures::token"(APP => APP_NAME, JWT => JWT);
-    
-    OUTPUT = SELECT 'Task finished' AS RESPONSE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
-	
+    CALL "XSA_KEY_VAULT.db.Procedures::token"(APP => 'AP_HUMIO', JWT => HUMIO_JWT);
+
 	SELECT SYSUUID INTO UUID FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
 	
-	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' starting...', JWT => JWT);
+	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' starting...', JWT => HUMIO_JWT);
 	
 	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'start', UUID, JWT, ACTION_RESPONSE);
     SELECT STATE INTO action_response_state FROM :ACTION_RESPONSE;
     
     IF action_response_state = 'OK' THEN
-    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' started...', JWT => JWT);
+    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' started...', JWT => HUMIO_JWT);
     
     	WHILE action_response_state != 'failed' AND action_response_state != 'completed' DO
 	    	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'status', UUID, JWT, ACTION_RESPONSE);
@@ -34,15 +34,15 @@ BEGIN
     	END WHILE;
     	
     	IF action_response_state = 'failed' THEN
-    		CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' failed...', LOG_LEVEL => 'ERROR', JWT => JWT);
+    		CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' failed...', LOG_LEVEL => 'ERROR', JWT => HUMIO_JWT);
     		CALL "XSA_KEY_VAULT.db.Procedures::error"('Task failed, check Python logs');
     	END IF;
     
-    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' finished...', JWT => JWT);
+    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' finished...', JWT => HUMIO_JWT);
     
     	OUTPUT = SELECT 'Task finished' AS RESPONSE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
     ELSE
-    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' failed...', LOG_LEVEL => 'ERROR', JWT => JWT);
+    	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' failed...', LOG_LEVEL => 'ERROR', JWT => HUMIO_JWT);
 	    CALL "XSA_KEY_VAULT.db.Procedures::error"('Task exited within one second, check Python logs');
     END IF;
 
