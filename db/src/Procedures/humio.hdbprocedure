@@ -52,7 +52,7 @@ BEGIN
 		ATTRIBUTES = '{"level": "' || LOG_LEVEL || '", "current_object_schema": "' || CURRENTOBJECTSCHEMA || '", "current_schema": "' || CURRENTSCHEMA || '", "current_user": "' || CURRENTUSER || '", "session_user": "' || SESSIONUSER || '", "application_user": "' || XSAPPLICATIONUSER || '", "environment": "' || ENVIRONMENT || '", ' || ATTRIBUTES || '}';
 	END IF;
 	
-	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabi' || ENVIRONMENT || '.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || MESSAGE || '"}]}]}''', OUTPUT => response);
+	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabi' || ENVIRONMENT || '.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || REPLACE(MESSAGE, '"', '\"') || '"}]}]}''', OUTPUT => response);
 	
 	SELECT RESPONSE INTO JSON_RESPONSE FROM :response;
 	
