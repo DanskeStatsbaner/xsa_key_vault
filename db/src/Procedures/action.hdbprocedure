@@ -20,7 +20,11 @@ BEGIN
 
 	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl -s https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabi' || ENVIRONMENT || '.dsb.dk:30033/' || ACTION || '?uuid=' || UUID || ' -X POST -H "Content-Type: application/json" -H "Authorization: Bearer '  || JWT || '"', OUTPUT => RESPONSE);
 	
-	SELECT RESPONSE INTO JSON_RESPONSE FROM :RESPONSE;
+	SELECT STRING_AGG(RESPONSE, '\n') INTO JSON_RESPONSE FROM :RESPONSE;
+	
+	-- DEBUG OUTPUT OF BASH PROCEDURE 
+	CALL "XSA_KEY_VAULT.db.Procedures::humio"(JSON_RESPONSE);
+	-- DEBUG END
 	
 	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => JSON_RESPONSE, LOG_LEVEL => 'DEBUG');
 	
