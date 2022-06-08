@@ -25,6 +25,7 @@ BEGIN
 	
 	DECLARE JSON_RESPONSE NVARCHAR(5000);
 	DECLARE PAYLOAD NVARCHAR(5000);
+	DECLARE COMMAND NVARCHAR(5000);
 	DECLARE STATE VARCHAR(100);
 	
 	SELECT
@@ -55,7 +56,9 @@ BEGIN
 	
 	PAYLOAD = '''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || REPLACE(MESSAGE, '"', '\"') || '"}]}]}''';
 	
-	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabi' || ENVIRONMENT || '.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ' || PAYLOAD, OUTPUT => response);
+	COMMAND = 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabi' || ENVIRONMENT || '.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ' || PAYLOAD;
+	
+	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => COMMAND, OUTPUT => response);
 	
 	SELECT RESPONSE INTO JSON_RESPONSE FROM :response;
 	
