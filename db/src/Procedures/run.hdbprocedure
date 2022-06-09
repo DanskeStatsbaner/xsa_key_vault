@@ -21,14 +21,14 @@ BEGIN
 	
 	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' starting...', JWT => HUMIO_JWT);
 	
-	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'start', UUID, JWT, ACTION_RESPONSE);
+	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'start', UUID, JWT, HUMIO_JWT, ACTION_RESPONSE);
     SELECT STATE INTO action_response_state FROM :ACTION_RESPONSE;
     
     IF action_response_state = 'OK' THEN
     	CALL "XSA_KEY_VAULT.db.Procedures::humio"(MESSAGE => APP_NAME || ' started...', JWT => HUMIO_JWT);
     
     	WHILE action_response_state != 'failed' AND action_response_state != 'completed' DO
-	    	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'status', UUID, JWT, ACTION_RESPONSE);
+	    	CALL "XSA_KEY_VAULT.db.Procedures::action"(APP_NAME, 'status', UUID, JWT, HUMIO_JWT, ACTION_RESPONSE);
 	    	SELECT STATE INTO action_response_state FROM :ACTION_RESPONSE;
 	    	CALL SQLSCRIPT_SYNC:SLEEP_SECONDS(1);
     	END WHILE;
