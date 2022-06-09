@@ -57,19 +57,20 @@ BEGIN
 	PAYLOAD = '''{"content":[{"tags": {"host": "' || HOST || '", "source": "' || SRC || '"}, "events": [{"timestamp": "' || DATETIME_NOW || '", "attributes": ' || ATTRIBUTES || ', "rawstring": "' || REPLACE(MESSAGE, '"', '\"') || '"}]}]}''';
 	
 	COMMAND = 'curl https://' || REPLACE(LOWER(APP_NAME), '_', '-') || '.xsabi' || ENVIRONMENT || '.dsb.dk:30033/humio -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ' || JWT || '" -d ' || PAYLOAD;
-	
+
 	CALL "XSA_KEY_VAULT.db.Procedures::bash"(COMMAND => COMMAND, OUTPUT => response);
 	
-	SELECT RESPONSE INTO JSON_RESPONSE FROM :response;
-	
-	RESPONSE_TABLE = SELECT JSON_VALUE(JSON_RESPONSE, '$.state') AS STATE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
-	
-	SELECT STATE INTO STATE FROM :RESPONSE_TABLE;
-	
-	IF STATE != 'OK' OR STATE IS NULL THEN
-		IF EXCEPTION_ON_ERROR = 1 THEN
-			CALL "XSA_KEY_VAULT.db.Procedures::error"(REPLACE(JSON_RESPONSE, '\', ''));
+	IF RECORD_COUNT(:response) > 0 THEN
+		SELECT RESPONSE INTO JSON_RESPONSE FROM :response;
+		
+		RESPONSE_TABLE = SELECT JSON_VALUE(JSON_RESPONSE, '$.state') AS STATE FROM "XSA_KEY_VAULT.db.Synonyms::DUMMY";
+		
+		SELECT STATE INTO STATE FROM :RESPONSE_TABLE;
+		
+		IF STATE != 'OK' OR STATE IS NULL THEN
+			IF EXCEPTION_ON_ERROR = 1 THEN
+				CALL "XSA_KEY_VAULT.db.Procedures::error"(REPLACE(JSON_RESPONSE, '\', ''));
+			END IF;
 		END IF;
 	END IF;
-	
 END
